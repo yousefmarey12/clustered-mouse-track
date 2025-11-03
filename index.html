@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body style="background-color: #c3f5f4;">
+
+</body>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"
+  integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
+
+
+
+
+<script>
+
+
+  let client = io('ws://localhost:5000/admin')
+
+  let svgConfig = {
+    height: 150,
+    width: 600,
+    margin: 30
+  }
+
+
+
+  let connections = []
+
+  let containerDiv = d3.select('body').append('div').attr('id', 'containerDiv')
+
+  let func = (idFunc, data) => {
+
+    let container = containerDiv.append('div').attr('id', idFunc).style('width', '100vw')
+    let svg = container.append('svg').attr('width', svgConfig.width).attr('height', svgConfig.height)
+
+
+
+
+    let now = Date.now()
+    let xScale = d3.scaleUtc([new Date(now - 120000), now], [0, svgConfig.width])
+
+    let g = svg.append('g').attr('transform', `translate(0,${svgConfig.height - svgConfig.margin})`)
+    let innerG = g.append('g').attr('id', '1')
+
+    g.selectAll('.tick').each(function (_, i, groups) {
+      document.getElementById('1').appendChild(groups[i])
+
+    })
+    g.selectChildren('.tick').remove()
+    let shift = 0
+    let path = svg.append("path")
+      .attr("fill", "none")
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", 1.5);
+    connections.push({ svg: svg, line: data.line && data.line.length > 0 ? data.line : [], obj: data })
+    d3.interval(() => {
+
+      now = Date.now()
+      let xScale = d3.scaleTime([new Date(now - 120000), now], [0, svgConfig.width])
+      let yScale = d3.scaleLinear([0, 200], [svgConfig.height - svgConfig.margin, 0])
+      let line = d3.line()
+        .x((d) => {
+
+
+          return xScale(new Date(d.date))
+
+        })
+        .y((d) => {
+
+          return yScale(d.count)
+        })
+      connections.forEach((el, i) => {
+        if (el.obj.id == idFunc) {
+
+
+          el.svg.selectChild('path').attr('d', line(el.line))
+        }
+      })
+
+      g.call(d3.axisBottom(xScale).ticks(d3.timeSecond.every(15)))
+      shift++
+      innerG.attr('transform', `translate(${-shift}, 0)`)
+    }, 50)
+
+
+    svg.style('margin', 'auto')
+
+    return () => {
+
+      return connections[connections.length - 1]
+    }
+  }
+
+
+  let getUniqueElements = (arr1, arr2) => {
+    let arr = []
+    let found = false
+    for (let i = 0; i < arr1.length; i++) {
+      for (let j = 0; j < arr2.length; j++) {
+        if (arr2[j].id == arr1[i].id) {
+          found = true
+        }
+
+      }
+      if (!found) {
+        arr.push(arr1[i])
+      }
+    }
+    return arr
+  }
+
+
+
+
+  client.on('updateUser', obj => {
+    console.log(connections)
+    for (let i = 0; i < connections.length; i++) {
+
+      if (obj.id == connections[i].obj.id) {
+        connections[i].line.push({
+          date: obj.date,
+          count: obj.count
+        })
+
+        client.emit('line', connections[i])
+      }
+    }
+  })
+  client.on('removeUser', id => {
+    console.log("I remove")
+    console.log(id)
+    d3.select('#containerDiv').select('#' + id).remove()
+    connections = connections.filter(el => el.obj.id != id)
+
+
+  })
+  client.on('addUser', user => {
+    console.log("Here")
+    console.log(user)
+    let conn = func(user.id, user)
+
+  })
+
+
+
+
+</script>
+
+</html>
