@@ -1,24 +1,35 @@
-let express = require('express')
-let cors = require('cors')
-let path = require('path')
-let fs = require('fs')
-let uuid = require('uuid')
-let cluster = require('node:cluster')
-let os = require('os')
-let app = express(cors())
-let http = require('http')
+let express = require("express");
+let cors = require("cors");
+let path = require("path");
+let fs = require("fs");
+let uuid = require("uuid");
+let cluster = require("node:cluster");
+let os = require("os");
+let http = require("http");
+
 const { setupMaster, setupWorker } = require("@socket.io/sticky");
-const { Server } = require('socket.io');
-const { setupPrimary, createAdapter } = require('@socket.io/cluster-adapter')
+const { Server } = require("socket.io");
+const { setupPrimary, createAdapter } = require("@socket.io/cluster-adapter");
 
+let numCpus = os.cpus();
 
-let numCpus = os.cpus()
 
 if (cluster.isPrimary) {
 
+
+    const httpServer = http.createServer();
+
+
+    setupMaster(httpServer, {
+        loadBalancingMethod: "least-connection",
+    });
+
     setupPrimary();
 
-    // Fork workers
+    httpServer.listen(5000, "0.0.0.0", () => {
+        console.log("Primary listening on 5000");
+    });
+
     for (let i = 0; i < numCpus.length; i++) {
         cluster.fork();
     }
@@ -28,91 +39,69 @@ if (cluster.isPrimary) {
         cluster.fork();
     });
 
-    return; // IMPORTANT: Primary should not run a server
+    return;
 }
 
-if (cluster.isWorker) {
-    // works across all workers using @socket.io/cluster-adapter
 
-    console.log(`Worker with Process id is running: ${process.pid}`)
-    const app = express();
-    const httpServer = http.createServer(app);
-    const io = new Server(httpServer, {
-        cors: {
-            origin: "https://mouse-track-backend.fly.dev",
-            methods: ["GET", "POST"]
-        }
+console.log(`Worker ${process.pid} starting`);
+
+const app = express();
+app.use(cors());
+
+app.get("/admin", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+});
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "client.html"));
+});
+
+const httpServer = http.createServer(app);
+
+const io = new Server(httpServer, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"],
+    },
+});
+
+io.adapter(createAdapter());
+
+
+setupWorker(io);
+
+httpServer.listen(0, "0.0.0.0");
+
+
+io.of("/client").on("connection", socket => {
+    let obj = {
+        id: uuid.v4(),
+        line: [],
+        count: 0,
+        date: Date.now(),
+    };
+
+    io.of("/admin").emit("addUser", obj);
+
+    let interval = setInterval(() => {
+        io.of("/admin").emit("updateUser", obj);
+        obj.count = 0;
+        obj.date = Date.now();
+    }, 1000);
+
+    socket.on("mouse_move", () => {
+        obj.count++;
     });
 
-    httpServer.listen(5000, "0.0.0.0");
-    app.get('/admin', (req, res) => {
-        res.sendFile(path.join(__dirname, './index.html'))
-    });
-    app.get('/', (req, res) => {
-        res.sendFile(path.join(__dirname, 'client.html'))
+    socket.on("line", connection => {
+        obj.line = connection.obj;
     });
 
-    setupWorker(io);
-    io.adapter(createAdapter());
+    socket.on("disconnect", () => {
+        io.of("/admin").emit("removeUser", obj.id);
+        clearInterval(interval);
+    });
+});
 
-
-
-    let addGraph = (socket, obj) => {
-        socket.emit('addUser', obj)
-    }
-    let removeGraph = (socket, id) => {
-        console.log("Here is it removed")
-        socket.emit('removeUser', id)
-    }
-    let updateGraph = (socket, obj) => {
-        socket.emit('updateUser', obj)
-    }
-
-    io.of('/admin').on('removeUser', obj => {
-
-    })
-    io.of('/admin').on('addUser', () => { })
-    io.of('/admin').on('connection', socket => {
-
-    })
-
-    io.of('/client').on('connection', socket => {
-        let obj = Object.create(null)
-        obj.line = []
-        obj.count = 0
-        obj.date = Date.now()
-        obj.id = uuid.v4()
-        io.of('/admin').emit('addUser', obj)
-
-        let interval = setInterval(() => {
-
-            io.of('/admin').emit('updateUser', obj)
-            obj.count = 0
-            obj.date = Date.now()
-
-        }, 1000)
-
-
-
-        socket.on('mouse_move', () => {
-
-            obj.count++
-        })
-
-        socket.on('line', connection => {
-            let line = connection.obj
-            obj.line = line
-        })
-
-        socket.on('disconnect', () => {
-            io.of('/admin').emit('removeUser', obj.id)
-            interval.close()
-        })
-
-
-    })
-
-
-
-}
-
+io.of("/admin").on("connection", socket => {
+    console.log("Admin connected");
+});
