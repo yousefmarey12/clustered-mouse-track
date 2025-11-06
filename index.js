@@ -50,7 +50,12 @@ if (cluster.isWorker) {
             fs.createReadStream(path.join(__dirname, 'client.html')).pipe(res)
         }
     })
-    const io = new Server(httpServer);
+    const io = new Server(httpServer, {
+        cors: {
+            origin: "mouse-track-backend.fly.dev",
+            methods: ["GET", "POST"]
+        }
+    });
     io.adapter(createAdapter());
     setupWorker(io);
 
