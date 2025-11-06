@@ -16,7 +16,9 @@ let numCpus = os.cpus()
 
 if (cluster.isPrimary) {
     const server = http.createServer();
-    server.listen(5000);
+    server.listen(5000, "0.0.0.0", () => {
+        console.log("Server listening on port 5000")
+    });
     setupMaster(server, {
         loadBalancingMethod: 'least-connection'
     })
