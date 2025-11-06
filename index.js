@@ -15,7 +15,7 @@ const { setupPrimary, createAdapter } = require('@socket.io/cluster-adapter')
 let numCpus = os.cpus()
 
 if (cluster.isPrimary) {
-    setupMaster();
+
     setupPrimary();
 
     // Fork workers
@@ -36,15 +36,6 @@ if (cluster.isWorker) {
 
     console.log(`Worker with Process id is running: ${process.pid}`)
     const app = express();
-
-    setupWorker(io);
-    httpServer.listen(5000, "0.0.0.0");
-    app.get('/admin', (req, res) => {
-        res.sendFile(path.join(__dirname, './index.html'))
-    });
-    app.get('/', (req, res) => {
-        res.sendFile(path.join(__dirname, 'client.html'))
-    });
     const httpServer = http.createServer(app);
     const io = new Server(httpServer, {
         cors: {
@@ -52,8 +43,18 @@ if (cluster.isWorker) {
             methods: ["GET", "POST"]
         }
     });
-    io.adapter(createAdapter());
+
+    httpServer.listen(5000, "0.0.0.0");
+    app.get('/admin', (req, res) => {
+        res.sendFile(path.join(__dirname, './index.html'))
+    });
+    app.get('/', (req, res) => {
+        res.sendFile(path.join(__dirname, 'client.html'))
+    });
+
     setupWorker(io);
+    io.adapter(createAdapter());
+
 
 
     let addGraph = (socket, obj) => {
