@@ -17,7 +17,7 @@
 
     <script>
 
-        let client = io('ws://localhost:5000/client')
+        let client = io('http://mouse-track-backend.fly.dev/client')
 
         window.addEventListener('mousemove', () => {
             client.emit('mouse_move', undefined)
