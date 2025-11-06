@@ -20,7 +20,8 @@
 
     <script>
 
-        let client = io('https://mouse-track-backend.fly.dev/client')
+        console.log()
+        let client = io('https://' + window.location.host + '/client')
 
         window.addEventListener('mousemove', () => {
             console.log("How many times do I run?")
