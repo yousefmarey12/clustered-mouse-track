@@ -23,6 +23,7 @@
         let client = io('https://mouse-track-backend.fly.dev/client')
 
         window.addEventListener('mousemove', () => {
+            console.log("How many times do I run?")
             client.emit('mouse_move', undefined)
         })
 

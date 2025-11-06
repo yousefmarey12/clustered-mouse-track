@@ -16,16 +16,16 @@ let numCpus = os.cpus()
 
 if (cluster.isPrimary) {
     const server = http.createServer();
+    setupMaster(server, {
+        loadBalancingMethod: "least-connection"
+    });
+    setupPrimary();
+
+
     server.listen(5000, "0.0.0.0", () => {
         console.log("Server listening on port 5000")
     });
-    setupMaster(server, {
-        loadBalancingMethod: 'least-connection'
-    })
 
-    setupPrimary({
-        serialization: "advanced"
-    })
 
 
     for (let i = 0; i < numCpus.length; i++) {
@@ -43,13 +43,14 @@ if (cluster.isWorker) {
     // works across all workers using @socket.io/cluster-adapter
 
     console.log(`Worker with Process id is running: ${process.pid}`)
-    const httpServer = http.createServer((req, res) => {
-        if (req.url === '/admin') {
-            fs.createReadStream(path.join(__dirname, 'index.html')).pipe(res)
-        } else {
-            fs.createReadStream(path.join(__dirname, 'client.html')).pipe(res)
-        }
-    })
+    const app = express();
+    app.get('/admin', (req, res) => {
+        res.sendFile(path.join(__dirname, './index.html'))
+    });
+    app.get('/', (req, res) => {
+        res.sendFile(path.join(__dirname, 'client.html'))
+    });
+    const httpServer = http.createServer(app);
     const io = new Server(httpServer, {
         cors: {
             origin: "mouse-track-backend.fly.dev",
