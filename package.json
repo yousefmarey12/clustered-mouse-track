@@ -16,6 +16,7 @@
     "@socket.io/cluster-adapter": "^0.3.0",
     "@socket.io/sticky": "^1.0.4",
     "cors": "^2.8.5",
+    "express": "^5.1.0",
     "socket.io": "^4.8.1",
     "uuid": "^13.0.0"
   }
