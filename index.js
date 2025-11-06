@@ -15,28 +15,20 @@ const { setupPrimary, createAdapter } = require('@socket.io/cluster-adapter')
 let numCpus = os.cpus()
 
 if (cluster.isPrimary) {
-    const server = http.createServer();
-    setupMaster(server, {
-        loadBalancingMethod: "least-connection"
-    });
+    setupMaster();
     setupPrimary();
 
-
-    server.listen(5000, "0.0.0.0", () => {
-        console.log("Server listening on port 5000")
-    });
-
-
-
+    // Fork workers
     for (let i = 0; i < numCpus.length; i++) {
-        let worker = cluster.fork()
-
+        cluster.fork();
     }
 
-    cluster.on('exit', (worker) => {
-        console.log(`Worker with ${worker.process.pid} died`)
-        cluster.fork()
-    })
+    cluster.on("exit", worker => {
+        console.log(`Worker ${worker.process.pid} died. Restarting.`);
+        cluster.fork();
+    });
+
+    return; // IMPORTANT: Primary should not run a server
 }
 
 if (cluster.isWorker) {
@@ -44,6 +36,9 @@ if (cluster.isWorker) {
 
     console.log(`Worker with Process id is running: ${process.pid}`)
     const app = express();
+
+    setupWorker(io);
+    httpServer.listen(5000, "0.0.0.0");
     app.get('/admin', (req, res) => {
         res.sendFile(path.join(__dirname, './index.html'))
     });
@@ -53,7 +48,7 @@ if (cluster.isWorker) {
     const httpServer = http.createServer(app);
     const io = new Server(httpServer, {
         cors: {
-            origin: "mouse-track-backend.fly.dev",
+            origin: "https://mouse-track-backend.fly.dev",
             methods: ["GET", "POST"]
         }
     });
