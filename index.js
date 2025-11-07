@@ -107,6 +107,8 @@ else {
 
 
             let interval = setInterval(() => {
+                console.log("obj in interval is")
+                console.log(obj)
                 io.of("/admin").emit("updateUser", obj);
                 obj.count = 0;
                 obj.date = Date.now();
@@ -114,7 +116,9 @@ else {
             }, 1000);
             socket.on("mouse_move", () => {
                 console.log("Mouse Moved")
+                console.log("obj in event is")
                 obj.count++;
+                console.log(obj)
             });
 
             socket.on("line", connection => {
