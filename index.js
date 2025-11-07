@@ -83,7 +83,7 @@ else {
                 io.of("/admin").emit("updateUser", obj);
                 obj.count = 0;
                 obj.date = Date.now();
-            }, 1000);
+            }, 10000);
             socket.on("mouse_move", () => {
                 console.log("Mouse Moved")
                 obj.count++;
@@ -113,7 +113,7 @@ else {
                 obj.count = 0;
                 obj.date = Date.now();
 
-            }, 1000);
+            }, 10000);
             socket.on("mouse_move", () => {
                 console.log("Mouse Moved")
                 console.log("obj in event is")
