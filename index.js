@@ -86,7 +86,7 @@ else {
                 obj.date = Date.now();
             }, 1000);
             socket.on("mouse_move", () => {
-                console.log("Mouse Moved")
+
                 obj.count++;
             });
             socket.on("line", connection => {
@@ -114,10 +114,9 @@ else {
                 obj.date = Date.now();
             }, 1000);
             socket.on("mouse_move", () => {
-                console.log("Mouse Moved")
-                console.log("obj in event is")
+
                 obj.count++;
-                console.log(obj)
+
             });
 
             socket.on("line", connection => {
