@@ -20,11 +20,11 @@
 
     <script>
 
-        console.log()
-        let client = io('https://' + window.location.host + '/client')
+
+        let client = io('/client')
 
         window.addEventListener('mousemove', () => {
-            console.log("How many times do I run?")
+
             client.emit('mouse_move', undefined)
         })
 

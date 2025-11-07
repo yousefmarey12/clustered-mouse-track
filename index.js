@@ -41,67 +41,70 @@ if (cluster.isPrimary) {
 
     return;
 }
+else {
+    console.log(`Worker ${process.pid} starting`);
 
+    const app = express();
+    app.use(cors());
 
-console.log(`Worker ${process.pid} starting`);
-
-const app = express();
-app.use(cors());
-
-app.get("/admin", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
-});
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "client.html"));
-});
-
-const httpServer = http.createServer(app);
-
-const io = new Server(httpServer, {
-    cors: {
-        origin: "*",   // allow testing first
-        methods: ["GET", "POST"]
-    }
-});
-
-io.adapter(createAdapter());
-
-
-setupWorker(io);
-
-httpServer.listen(0, "0.0.0.0");
-
-
-io.of("/client").on("connection", socket => {
-    let obj = {
-        id: uuid.v4(),
-        line: [],
-        count: 0,
-        date: Date.now(),
-    };
-
-    io.of("/admin").emit("addUser", obj);
-
-    let interval = setInterval(() => {
-        io.of("/admin").emit("updateUser", obj);
-        obj.count = 0;
-        obj.date = Date.now();
-    }, 1000);
-
-    socket.on("mouse_move", () => {
-        obj.count++;
+    app.get("/admin", (req, res) => {
+        res.sendFile(path.join(__dirname, "index.html"));
+    });
+    app.get("/", (req, res) => {
+        res.sendFile(path.join(__dirname, "client.html"));
     });
 
-    socket.on("line", connection => {
-        obj.line = connection.obj;
+    const httpServer = http.createServer(app);
+
+    const io = new Server(httpServer, {
+        cors: {
+            origin: "*",   // allow testing first
+            methods: ["GET", "POST"]
+        }
     });
 
-    socket.on("disconnect", () => {
-        io.of("/admin").emit("removeUser", obj.id);
-        clearInterval(interval);
-    });
-});
+    io.adapter(createAdapter());
 
-io.of("/admin").on("connection", socket => {
-    console.log("Admin connected");
-});
+
+    setupWorker(io);
+
+    httpServer.listen(0, "0.0.0.0");
+
+
+    io.of("/client").on("connection", socket => {
+        let obj = {
+            id: uuid.v4(),
+            line: [],
+            count: 0,
+            date: Date.now(),
+        };
+
+        io.of("/admin").emit("addUser", obj);
+
+        let interval = setInterval(() => {
+            io.of("/admin").emit("updateUser", obj);
+            obj.count = 0;
+            obj.date = Date.now();
+        }, 1000);
+
+        socket.on("mouse_move", () => {
+            obj.count++;
+        });
+
+        socket.on("line", connection => {
+            obj.line = connection.obj;
+        });
+
+        socket.on("disconnect", () => {
+            io.of("/admin").emit("removeUser", obj.id);
+            clearInterval(interval);
+        });
+    });
+
+    io.of("/admin").on("connection", socket => {
+        console.log("Admin connected");
+    });
+
+}
+
+
