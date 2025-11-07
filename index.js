@@ -88,6 +88,7 @@ else {
         }, 1000);
 
         socket.on("mouse_move", () => {
+            console.log("Mouse Moved")
             obj.count++;
         });
 

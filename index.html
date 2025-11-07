@@ -36,6 +36,8 @@
 
   let func = (idFunc, data) => {
 
+    console.log("func is called")
+    console.log(idFunc)
     let container = containerDiv.append('div').attr('id', idFunc).style('width', '100vw')
     let svg = container.append('svg').attr('width', svgConfig.width).attr('height', svgConfig.height)
 
@@ -120,9 +122,11 @@
 
   client.on('updateUser', obj => {
 
+
     for (let i = 0; i < connections.length; i++) {
 
       if (obj.id == connections[i].obj.id) {
+
         connections[i].line.push({
           date: obj.date,
           count: obj.count
@@ -133,8 +137,9 @@
     }
   })
   client.on('removeUser', id => {
-
-    d3.select('#containerDiv').select(id).remove()
+    console.log("Remove is called")
+    console.log(id)
+    d3.select('#containerDiv').select('#' + id).remove()
     connections = connections.filter(el => el.obj.id != id)
 
 
