@@ -22,9 +22,11 @@
 
 
         let client = io('/client')
-
+        client.on("connect_error", e => {
+            console.log("err")
+            console.log(e)
+        });
         window.addEventListener('mousemove', () => {
-
             client.emit('mouse_move', undefined)
         })
 
