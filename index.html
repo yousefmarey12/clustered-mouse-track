@@ -134,7 +134,7 @@
   })
   client.on('removeUser', id => {
 
-    d3.select('#containerDiv').select('#' + id).remove()
+    d3.select('#containerDiv').select(id).remove()
     connections = connections.filter(el => el.obj.id != id)
 
 
