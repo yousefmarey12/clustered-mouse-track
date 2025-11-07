@@ -26,8 +26,8 @@ if (cluster.isPrimary) {
 
     setupPrimary();
 
-    httpServer.listen(5000, "0.0.0.0", () => {
-        console.log("Primary listening on 5000");
+    httpServer.listen(8080, "0.0.0.0", () => {
+        console.log("Primary listening on 8080");
     });
 
     for (let i = 0; i < numCpus.length; i++) {
