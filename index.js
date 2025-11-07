@@ -73,7 +73,7 @@ else {
 
     io.of("/client").on("connection", socket => {
         let obj = {
-            id: uuid.v4(),
+            id: Math.random().toString().substring(3, 11),
             line: [],
             count: 0,
             date: Date.now(),
