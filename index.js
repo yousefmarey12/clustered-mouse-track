@@ -58,7 +58,7 @@ else {
 
     const io = new Server(httpServer, {
         cors: {
-            origin: "*",   // allow testing first
+            origin: "*",
             methods: ["GET", "POST"]
         }
     });
@@ -72,34 +72,64 @@ else {
 
 
     io.of("/client").on("connection", socket => {
-        let obj = {
-            id: Math.random().toString().substring(3, 11),
-            line: [],
-            count: 0,
-            date: Date.now(),
-        };
+        if (socket.recovered) {
+            let obj = {
+                id: socket.id,
+                line: socket.data.line ? socket.data.line : [],
+                count: socket.data.line && socket.data.line[socket.data.line.length - 1].count ? ssocket.data.line[socket.data.line.length - 1].count : 0,
+                date: Date.now(),
+            };
+            let interval = setInterval(() => {
+                io.of("/admin").emit("updateUser", obj);
+                obj.count = 0;
+                obj.date = Date.now();
+            }, 1000);
+            socket.on("mouse_move", () => {
+                console.log("Mouse Moved")
+                obj.count++;
+            });
+            socket.on("line", connection => {
+                obj.line = connection.obj;
+            });
+            socket.on("disconnect", () => {
+                io.of("/admin").emit("removeUser", obj.id);
+                clearInterval(interval);
+            });
+        }
+        else {
+            let obj = {
+                id: socket.id,
+                line: [],
+                count: 0,
+                date: Date.now(),
+            };
+            io.of("/admin").emit("addUser", obj);
 
-        io.of("/admin").emit("addUser", obj);
 
-        let interval = setInterval(() => {
-            io.of("/admin").emit("updateUser", obj);
-            obj.count = 0;
-            obj.date = Date.now();
-        }, 1000);
+            let interval = setInterval(() => {
+                io.of("/admin").emit("updateUser", obj);
+                obj.count = 0;
+                obj.date = Date.now();
 
-        socket.on("mouse_move", () => {
-            console.log("Mouse Moved")
-            obj.count++;
-        });
+            }, 1000);
+            socket.on("mouse_move", () => {
+                console.log("Mouse Moved")
+                obj.count++;
+            });
 
-        socket.on("line", connection => {
-            obj.line = connection.obj;
-        });
+            socket.on("line", connection => {
+                obj.line = connection.obj;
+                socket.data.line = connection.obj
+            });
 
-        socket.on("disconnect", () => {
-            io.of("/admin").emit("removeUser", obj.id);
-            clearInterval(interval);
-        });
+            socket.on("disconnect", () => {
+                io.of("/admin").emit("removeUser", obj.id);
+                clearInterval(interval);
+            });
+        }
+
+
+
     });
 
     io.of("/admin").on("connection", socket => {
