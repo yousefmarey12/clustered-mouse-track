@@ -80,10 +80,11 @@ else {
                 date: Date.now(),
             };
             let interval = setInterval(() => {
-                io.of("/admin").emit("updateUser", obj);
+                let snapshot = { ...obj }
+                io.of("/admin").emit("updateUser", snapshot);
                 obj.count = 0;
                 obj.date = Date.now();
-            }, 10000);
+            }, 1000);
             socket.on("mouse_move", () => {
                 console.log("Mouse Moved")
                 obj.count++;
@@ -107,13 +108,11 @@ else {
 
 
             let interval = setInterval(() => {
-                console.log("obj in interval is")
-                console.log(obj)
-                io.of("/admin").emit("updateUser", obj);
+                let snapshot = { ...obj }
+                io.of("/admin").emit("updateUser", snapshot);
                 obj.count = 0;
                 obj.date = Date.now();
-
-            }, 10000);
+            }, 1000);
             socket.on("mouse_move", () => {
                 console.log("Mouse Moved")
                 console.log("obj in event is")
